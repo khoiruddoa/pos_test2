@@ -1,0 +1,118 @@
+@extends('dashboard.layouts.main')
+@section('container')
+
+
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        @if (session()->has('success'))
+            <div class="alert alert-success alert-dismissible fade show col-lg-8" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+        @if (session()->has('failed'))
+            <div class="alert alert-danger alert-dismissible fade show col-lg-8" role="alert">
+                {{ session('failed') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        <!-- <h1 class="h2">daftar pesanan {{ $order->customer->name }}</h1> -->
+    </div>
+    <div class="table-responsive col-lg-8 m-5">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Nama Barang</th>
+                    <th scope="col">Jumlah</th>
+                    <th scope="col">Harga</th>
+                    <th scope="col">Total</th>
+                    <th scope="col"></th>
+
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($sells as $sell)
+                    <tr>
+                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ $sell->category->name }}</td>
+                        <td>{{ $sell->weight }}</td>
+                        <td>@currency($sell->price)</td>
+                        <td>@currency($sell->total)</td>
+                        <td>
+                            @if ($order->status < 1)
+                                <form action="/dashboard/sells/{{ $sell->id }}" method="post" class="d-inline">
+                                    @method('delete')
+                                    @csrf
+                                    <button class="badge bg-danger border-0"
+                                        onclick="return confirm('Yakin akan menghapus transaksi ini?')">Hapus</button>
+                                </form>
+                            @endif
+                        </td>
+
+
+                    </tr>
+                @endforeach
+
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+
+                    <th> Total Tagihan</th>
+                    <td>@currency($sells->sum('total'))</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+    <a href="/dashboard/sells/orders/{{ $order->id }}/edit" target="blank" class="badge bg-info"><span
+            data-feather="printer"></span>
+    </a>
+    <br>
+    @if ($order->status < 1)
+        <form action="/dashboard/bills" method="post" class="d-inline m-5">
+            @csrf
+            <input type="hidden" name="order_id" value="{{ $order->id }}">
+            <input type="hidden" name="id" value="{{ $order->id }}">
+
+            <input type="hidden" name="debt" value="{{ $sells->sum('total') }}">
+            <button class="badge bg-primary" onclick="return confirm('Anda Yakin Ingin membuat tagihan?')">Buat
+                Tagihan</button>
+        </form>
+
+        <br>
+        <div class="col-lg-8 m-5">
+            <h2>Tambah barang </h2>
+            <form method="post" action="/dashboard/sells" class="mb-5">
+                @csrf
+                <input type="hidden" name="order_id" value="{{ $order->id }}">
+                <div class="mb-3">
+                    <label for="category" class="form-label">Nama Barang :</label>
+                    <select class="form-select" name="category_id">
+                        @foreach ($categories as $category)
+                            @if ($category->weight > 0)
+                                @if (old('category_id') == $category->id)
+                                    <option value="{{ $category->id }}" selected>{{ $category->name }}</option>
+                                @else
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endif
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="weight" class="form-label">Jumlah</label>
+                    <input type="number" class="form-control" id="weight" name="weight" step="0.01"
+                        value="{{ old('weight') }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="price" class="form-label">Harga</label>
+                    <input type="text" class="form-control" id="inputAngka" name="price" value="{{ old('price') }}"
+                        required>
+                </div>
+                <button type="submit" class="btn btn-primary">Input</button>
+            </form>
+        </div>
+    @endif
+@endsection
